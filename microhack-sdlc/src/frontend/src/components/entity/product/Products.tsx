@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useQuery } from 'react-query';
 import { api } from '../../../api/config';
 import { useTheme } from '../../../context/ThemeContext';
+import { useCart } from '../../../context/CartContext';
 
 interface Product {
   productId: number;
@@ -28,6 +29,7 @@ export default function Products() {
   const [showModal, setShowModal] = useState(false);
   const { data: products, isLoading, error } = useQuery('products', fetchProducts);
   const { darkMode } = useTheme();
+  const { cart, addItem, error: cartError, isLoading: isCartLoading } = useCart();
 
   const filteredProducts = products?.filter(
     (product) =>
@@ -49,15 +51,16 @@ export default function Products() {
     }));
   };
 
-  const handleAddToCart = (productId: number) => {
+  const handleAddToCart = async (productId: number) => {
     const quantity = quantities[productId] || 0;
     if (quantity > 0) {
-      // TODO: Implement cart functionality
-      alert(`Added ${quantity} items to cart`);
-      setQuantities((prev) => ({
-        ...prev,
-        [productId]: 0,
-      }));
+      const added = await addItem(productId, quantity);
+      if (added) {
+        setQuantities((prev) => ({
+          ...prev,
+          [productId]: 0,
+        }));
+      }
     }
   };
 
@@ -103,6 +106,9 @@ export default function Products() {
           >
             Products
           </h1>
+          {cartError && (
+            <p className="text-red-600" role="alert">{cartError}</p>
+          )}
 
           <div className="relative">
             <input
@@ -157,6 +163,7 @@ export default function Products() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProducts?.map((product) => {
               const hasDiscount = product.discount != null && product.discount > 0;
+              const cartQuantity = cart.items.find((item) => item.productId === product.productId)?.quantity ?? 0;
               return (
                 <div
                   key={product.productId}
@@ -206,6 +213,9 @@ export default function Products() {
                         </span>
                       )}
                     </div>
+                    <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>
+                      In cart: {cartQuantity}
+                    </p>
 
                     <div className="flex items-center justify-between">
                       <div
@@ -241,7 +251,7 @@ export default function Products() {
                           ? 'bg-primary hover:bg-accent text-white'
                           : `${darkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-200 text-gray-500'} cursor-not-allowed`
                           }`}
-                        disabled={!quantities[product.productId]}
+                        disabled={!quantities[product.productId] || isCartLoading}
                         aria-label={`Add ${quantities[product.productId] || 0} ${product.name} to cart`}
                         id={`add-to-cart-${product.productId}`}
                       >
