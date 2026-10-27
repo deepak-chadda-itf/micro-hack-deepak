@@ -1,3 +1,4 @@
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using OctoSupply.Api.Data;
 using OctoSupply.Api.Repositories;
 using OctoSupply.Api.Services;
@@ -71,6 +72,25 @@ app.UseCors("ApiCors");
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.MapGet("/", () => "Hello, world!");
+// Liveness: the process is up and serving requests.
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+// Readiness: the database must be reachable and migrated.
+app.MapGet("/health/ready", async (SqliteConnectionFactory factory, ILogger<Program> logger) =>
+{
+    try
+    {
+        await using var connection = await factory.OpenConnectionAsync();
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM products";
+        await command.ExecuteScalarAsync();
+        return Results.Ok(new { status = "ready", database = "ok" });
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Readiness check failed: database unavailable");
+        return Results.Json(new { status = "unready", database = "error" }, statusCode: StatusCodes.Status503ServiceUnavailable);
+    }
+});
 app.MapControllers();
 
 var migrator = app.Services.GetRequiredService<DatabaseMigrator>();

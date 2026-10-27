@@ -79,3 +79,12 @@ az deployment group create -g <rg> -f infra/main.bicep -p infra/main.parameters.
 - Validate locally: `az bicep build --file infra/main.bicep`.
 - The first phase-2 attempt can fail while the `AcrPull` assignment propagates; the workflow retries.
 - Logs: Log Analytics workspace `octocat-dev-logs`, or `az containerapp logs show -g <rg> -n octocat-dev-api`.
+
+## Monitoring and the SRE Agent exercise
+
+- Health: `GET /health` (liveness) and `GET /health/ready` (readiness, checks the database). Probes in `modules/containerapp.bicep` use them.
+- Telemetry: Container Apps logs go to Log Analytics; the API also sends traces/requests to Application Insights (`octocat-dev-appi`) through `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+- Alerts (`modules/alerts.bicep`): API 5xx responses and container restarts.
+- Fault switch: run the workflow manually (Actions > Deploy to Azure > Run workflow) with `fault = bad-payment-provider`. That deploys `PAYMENT_PROVIDER=bogus-provider`: the API stays up and `/health` stays green, but every checkout returns 500.
+- Remediate: ask the SRE Agent for the root cause, then re-run the workflow with `fault = none` (or roll back the revision).
+- Known gap: the bad config is only detected at checkout time. Validating `PAYMENT_PROVIDER` at startup or in `/health/ready` would stop the bad revision from taking traffic.

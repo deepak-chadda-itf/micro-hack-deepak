@@ -16,6 +16,12 @@ on:
       - 'microhack-sdlc/**'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
+    inputs:
+      fault:
+        description: 'Fault injection for the SRE Agent exercise (none = healthy deploy)'
+        type: choice
+        default: none
+        options: [none, bad-payment-provider]
 
 permissions:
   id-token: write
@@ -81,6 +87,7 @@ jobs:
       PAYMENT_PROVIDER: ${{ vars.PAYMENT_PROVIDER || 'demo' }}
       PAYMENT_PUBLISHABLE_KEY: ${{ vars.PAYMENT_PUBLISHABLE_KEY }}
       PAYMENT_API_KEY: ${{ secrets.PAYMENT_API_KEY }}
+      FAULT: ${{ inputs.fault || 'none' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -127,6 +134,7 @@ jobs:
                     apiImage="$LOGIN_SERVER/api:$IMAGE_TAG" \
                     frontendImage="$LOGIN_SERVER/frontend:$IMAGE_TAG" \
                     paymentProvider="$PAYMENT_PROVIDER" \
+                    fault="$FAULT" \
                     paymentPublishableKey="$PAYMENT_PUBLISHABLE_KEY" \
                     paymentApiKey="$PAYMENT_API_KEY" \
                 --only-show-errors; then
@@ -141,6 +149,7 @@ jobs:
           echo "api_url=$API_URL" >> "$GITHUB_OUTPUT"
 
       - name: Smoke test (cart -> checkout)
+        if: env.FAULT == 'none'
         run: bash "$APP_DIR/scripts/smoke-test.sh" "${{ steps.infra.outputs.frontend_url }}" "${{ steps.infra.outputs.api_url }}"
 
       - name: Summary

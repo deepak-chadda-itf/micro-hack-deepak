@@ -50,6 +50,9 @@ param memory string = '1.0Gi'
 @description('Path used by startup/liveness/readiness probes.')
 param probePath string = '/'
 
+@description('Path used by the readiness probe.')
+param readinessPath string = probePath
+
 @description('Tags applied to the app.')
 param tags object = {}
 
@@ -123,7 +126,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               type: 'Readiness'
               httpGet: {
-                path: probePath
+                path: readinessPath
                 port: targetPort
               }
               periodSeconds: 10

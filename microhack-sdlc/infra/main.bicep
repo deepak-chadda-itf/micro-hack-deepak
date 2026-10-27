@@ -51,6 +51,13 @@ param frontendMaxReplicas int = 3
 ])
 param paymentProvider string = 'demo'
 
+@description('Fault injection for the SRE exercise. none = healthy; bad-payment-provider deploys an unsupported PAYMENT_PROVIDER so checkout returns 500.')
+@allowed([
+  'none'
+  'bad-payment-provider'
+])
+param fault string = 'none'
+
 @description('Stripe secret key. Stored as a Container App secret. Required when paymentProvider is stripe.')
 @secure()
 param paymentApiKey string = ''
@@ -97,6 +104,16 @@ module logAnalytics 'modules/loganalytics.bicep' = {
   }
 }
 
+module monitoring 'modules/monitoring.bicep' = {
+  name: 'monitoring'
+  params: {
+    location: location
+    appInsightsName: '${baseName}-appi'
+    logAnalyticsWorkspaceId: logAnalytics.outputs.workspaceId
+    tags: commonTags
+  }
+}
+
 module environment 'modules/containerapp-env.bicep' = {
   name: 'containerapp-env'
   params: {
@@ -126,7 +143,11 @@ var apiEnv = concat([
   }
   {
     name: 'PAYMENT_PROVIDER'
-    value: paymentProvider
+    value: fault == 'bad-payment-provider' ? 'bogus-provider' : paymentProvider
+  }
+  {
+    name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+    value: monitoring.outputs.connectionString
   }
   {
     name: 'PAYMENT_PUBLISHABLE_KEY'
@@ -154,9 +175,21 @@ module apiApp 'modules/containerapp.bicep' = if (deployApps) {
     userAssignedIdentityId: pullIdentity.id
     minReplicas: 1
     maxReplicas: 1
+    probePath: '/health'
+    readinessPath: '/health/ready'
     secretName: 'payment-api-key'
     secretValue: paymentApiKey
     env: apiEnv
+    tags: commonTags
+  }
+}
+
+module alerts 'modules/alerts.bicep' = if (deployApps) {
+  name: 'alerts'
+  dependsOn: [apiApp]
+  params: {
+    apiAppName: apiAppName
+    prefix: baseName
     tags: commonTags
   }
 }
