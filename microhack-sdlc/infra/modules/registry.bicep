@@ -1,11 +1,6 @@
-// =============================================================================
-// Module: registry.bicep  (Azure Container Registry)
-// -----------------------------------------------------------------------------
-// Holds the two application images (api, frontend) that the Container Apps pull.
-//
-// This is a STARTER SKELETON. The core resource + key params are wired so the
-// template compiles, but the meaningful decisions are left as // TODO for you.
-// =============================================================================
+// Azure Container Registry holding the api + frontend images.
+// Admin user is disabled; the apps pull with a user-assigned managed identity
+// that is granted AcrPull here.
 
 @description('Azure region for the registry.')
 param location string
@@ -13,12 +8,13 @@ param location string
 @description('Globally-unique name for the container registry (alphanumeric, 5-50 chars).')
 param registryName string
 
+@description('Principal ID of the managed identity that pulls images (granted AcrPull).')
+param pullPrincipalId string
+
 @description('Tags applied to the registry.')
 param tags object = {}
 
-// TODO: Decide the SKU. Basic is cheapest and fine for a hackathon; Standard/
-//       Premium add throughput, geo-replication, private endpoints, etc.
-//       Ask Copilot for Well-Architected guidance if unsure.
+// Basic is enough for two small images; no geo-replication/private link needed.
 @allowed([
   'Basic'
   'Standard'
@@ -26,11 +22,7 @@ param tags object = {}
 ])
 param sku string = 'Basic'
 
-// TODO: For OIDC/managed-identity pulls you can (and ideally should) keep the
-//       admin user DISABLED and grant the Container Apps' identity AcrPull
-//       instead. The scaffold defaults to enabled to keep first-run simple —
-//       flip this to false once you wire up role assignments.
-param adminUserEnabled bool = true
+var acrPullRoleId = '7f951dda-4ed3-411a-ab6f-dd0b7a3fc0d6'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
   name: registryName
@@ -40,16 +32,25 @@ resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = 
     name: sku
   }
   properties: {
-    adminUserEnabled: adminUserEnabled
-    // TODO: Consider `publicNetworkAccess: 'Disabled'` + private endpoints for
-    //       a hardened setup, and `anonymousPullEnabled: false`.
+    adminUserEnabled: false
+    anonymousPullEnabled: false
+  }
+}
+
+resource acrPull 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(registry.id, pullPrincipalId, acrPullRoleId)
+  scope: registry
+  properties: {
+    principalId: pullPrincipalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', acrPullRoleId)
   }
 }
 
 @description('The login server host name of the registry (e.g. myregistry.azurecr.io).')
 output loginServer string = registry.properties.loginServer
 
-@description('The resource ID of the registry (useful for role assignments).')
+@description('The resource ID of the registry.')
 output registryId string = registry.id
 
 @description('The name of the registry.')
