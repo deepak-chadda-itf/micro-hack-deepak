@@ -22,7 +22,7 @@ param tags object = {}
 ])
 param sku string = 'Basic'
 
-var acrPullRoleId = '7f951dda-4ed3-411a-ab6f-dd0b7a3fc0d6'
+var acrPullRoleId = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 
 resource registry 'Microsoft.ContainerRegistry/registries@2023-11-01-preview' = {
   name: registryName
