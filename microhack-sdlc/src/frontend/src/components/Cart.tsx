@@ -93,6 +93,9 @@ export default function Cart() {
                 <span>Total</span>
                 <span>{formatPrice(cart.total)}</span>
               </div>
+              <Link to="/checkout" className="block text-center mt-5 bg-primary hover:bg-accent text-white px-5 py-3 rounded-md font-medium">
+                Proceed to checkout
+              </Link>
             </aside>
           </div>
         )}

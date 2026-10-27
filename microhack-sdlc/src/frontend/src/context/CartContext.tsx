@@ -25,6 +25,7 @@ interface CartContextValue {
   addItem: (productId: number, quantity: number) => Promise<boolean>;
   setItemQuantity: (productId: number, quantity: number) => Promise<boolean>;
   removeItem: (productId: number) => Promise<boolean>;
+  clearCart: () => void;
 }
 
 const CART_STORAGE_KEY = 'octosupply-cart-id';
@@ -114,8 +115,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     return saveCart(axios.delete<CartState>(`${cartUrl}/items/${productId}`));
   }
 
+  function clearCart() {
+    setCart({ cartId, items: [], itemCount: 0, total: 0 });
+  }
+
   return (
-    <CartContext.Provider value={{ cart, error, isLoading, addItem, setItemQuantity, removeItem }}>
+    <CartContext.Provider value={{ cart, error, isLoading, addItem, setItemQuantity, removeItem, clearCart }}>
       {children}
     </CartContext.Provider>
   );

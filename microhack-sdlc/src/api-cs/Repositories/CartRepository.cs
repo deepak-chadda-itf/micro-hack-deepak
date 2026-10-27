@@ -1,11 +1,12 @@
 using Microsoft.Data.Sqlite;
 using OctoSupply.Api.Data;
 using OctoSupply.Api.Models;
+using OctoSupply.Api.Services;
 using OctoSupply.Api.Utils;
 
 namespace OctoSupply.Api.Repositories;
 
-public sealed class CartRepository(SqliteConnectionFactory connectionFactory)
+public sealed class CartRepository(SqliteConnectionFactory connectionFactory) : ICheckoutCartReader
 {
     private readonly SqliteConnectionFactory _connectionFactory = connectionFactory;
 

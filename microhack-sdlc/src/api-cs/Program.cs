@@ -1,5 +1,6 @@
 using OctoSupply.Api.Data;
 using OctoSupply.Api.Repositories;
+using OctoSupply.Api.Services;
 using OctoSupply.Api.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,6 +14,21 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<SqliteConnectionFactory>();
 builder.Services.AddSingleton<DatabaseMigrator>();
+var paymentOptions = new PaymentProviderOptions(
+    builder.Configuration["PAYMENT_PROVIDER"]?.Trim().ToLowerInvariant() ?? "demo",
+    builder.Configuration["PAYMENT_API_KEY"],
+    builder.Configuration["PAYMENT_PUBLISHABLE_KEY"]);
+builder.Services.AddSingleton(paymentOptions);
+builder.Services.AddHttpClient<StripePaymentProvider>();
+builder.Services.AddScoped<ICheckoutCartReader>(services => services.GetRequiredService<CartRepository>());
+builder.Services.AddScoped<ICheckoutRepository, CheckoutRepository>();
+builder.Services.AddScoped<CheckoutService>();
+builder.Services.AddScoped<IPaymentProvider>(services => paymentOptions.Provider switch
+{
+    "demo" => new DemoPaymentProvider(),
+    "stripe" => services.GetRequiredService<StripePaymentProvider>(),
+    _ => throw new InvalidOperationException($"Unsupported PAYMENT_PROVIDER '{paymentOptions.Provider}'. Use 'demo' or 'stripe'.")
+});
 builder.Services.AddScoped<BranchesRepository>();
 builder.Services.AddScoped<CartRepository>();
 builder.Services.AddScoped<DeliveriesRepository>();

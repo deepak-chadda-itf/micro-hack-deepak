@@ -44,3 +44,11 @@ public sealed class DatabaseException : ApiException
     {
     }
 }
+
+public sealed class PaymentException : ApiException
+{
+    public PaymentException(string message, int statusCode = StatusCodes.Status402PaymentRequired)
+        : base(message, "PAYMENT_FAILED", statusCode)
+    {
+    }
+}

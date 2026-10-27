@@ -42,5 +42,6 @@ export const api = {
     orderDetails: '/api/order-details',
     orderDetailDeliveries: '/api/order-detail-deliveries',
     cart: '/api/cart',
+    checkout: '/api/checkout',
   },
 };
