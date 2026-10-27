@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test:unit": "vitest run --environment jsdom src/components/Checkout.test.tsx",
     "preview": "vite preview",
     "test": "npm run test:e2e",
     "test:e2e": "playwright test"
@@ -15,7 +16,7 @@
     "@stripe/react-stripe-js": "^7.0.1",
     "@stripe/stripe-js": "^10.2.0",
     "@types/react-slick": "^0.23.13",
-    "axios": "1.18.0",
+    "axios": "1.21.0",
     "globals": "16.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -43,8 +44,8 @@
     "tailwindcss": "^3.3.0",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
-    "vite": "7.2.6",
-    "vitest": "4.1.11"
+    "vite": "7.3.7",
+    "vitest": "4.1.12"
   },
   "optionalDependencies": {
     "@rollup/rollup-linux-x64-gnu": "4.52.4"

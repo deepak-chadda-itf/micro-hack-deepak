@@ -1,3 +1,4 @@
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Logging.Abstractions;
 using OctoSupply.Api.Data;
 using OctoSupply.Api.Models;
@@ -7,12 +8,14 @@ using Xunit;
 
 namespace OctoSupply.Api.Tests.Repositories;
 
+[Collection("SQLite database tests")]
 public sealed class SuppliersRepositoryTests
 {
     [Fact]
     public async Task CreateAndFindById_PersistsSupplier()
     {
         var dbPath = Path.Combine(Path.GetTempPath(), $"octosupply-tests-{Guid.NewGuid():N}.db");
+        var previousDbPath = Environment.GetEnvironmentVariable("DB_FILE");
         Environment.SetEnvironmentVariable("DB_FILE", dbPath);
 
         try
@@ -41,7 +44,8 @@ public sealed class SuppliersRepositoryTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("DB_FILE", null);
+            SqliteConnection.ClearAllPools();
+            Environment.SetEnvironmentVariable("DB_FILE", previousDbPath);
             if (File.Exists(dbPath))
             {
                 File.Delete(dbPath);
@@ -53,6 +57,7 @@ public sealed class SuppliersRepositoryTests
     public async Task Update_WithNoFields_ThrowsValidationException()
     {
         var dbPath = Path.Combine(Path.GetTempPath(), $"octosupply-tests-{Guid.NewGuid():N}.db");
+        var previousDbPath = Environment.GetEnvironmentVariable("DB_FILE");
         Environment.SetEnvironmentVariable("DB_FILE", dbPath);
 
         try
@@ -67,7 +72,8 @@ public sealed class SuppliersRepositoryTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable("DB_FILE", null);
+            SqliteConnection.ClearAllPools();
+            Environment.SetEnvironmentVariable("DB_FILE", previousDbPath);
             if (File.Exists(dbPath))
             {
                 File.Delete(dbPath);

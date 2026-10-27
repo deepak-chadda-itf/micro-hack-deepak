@@ -8,6 +8,9 @@ export default defineConfig({
     port: 5137,
     host: '0.0.0.0',
     strictPort: true,
+    watch: {
+      ignored: ['**/playwright-report/**', '**/test-results/**'],
+    },
   },
   define: {
     'process.env.CODESPACE_NAME': JSON.stringify(process.env.CODESPACE_NAME),
